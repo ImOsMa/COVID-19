@@ -30,10 +30,10 @@ for i in range(1, len(rows)):
     #print(len(tds))
     #print(len(columns))
     if len(tds) == len(columns):
-        values = [tds[0].text, tds[1].text, tds[2].text, tds[3].text, tds[4].text, tds[5].text, tds[6].text, tds[7].text,tds[8].text]
-
+        values = [tds[0].text.replace('\n','').replace('Yes', '1').replace('No','0'), tds[1].text.replace('\n','').replace('Yes', '1').replace('No','0'), tds[2].text.replace('\n','').replace('Yes', '1').replace('No','0'), tds[3].text.replace('\n','').replace('Yes', '1').replace('No','0').replace('Mandatory quarantine','2').replace('Travel suspended','2').replace('Limited quarantine','1').replace('Recommended quarantine', '1').replace('Limited quarantine / Screened', '1').replace('Reqional','1').replace('Screened','1'), tds[4].text.replace('\n','').replace('Yes', '1').replace('No','0'), tds[5].text.replace('\n','').replace('Yes', '1').replace('No','0').replace('Restricted','1'), tds[6].text.replace('\n','').replace('Yes', '1').replace('No','0').replace('Restricted','1'), tds[7].text.replace('\n','').replace('Yes','1').replace('No','0').replace('Restricted','1'),tds[8].text.replace('\n','').replace('Yes', '1').replace('No','0').replace('Restricted','1')]
+        #print(values)
     else:
-        values = [td.text for td in tds]
+        values = [td.text.replace('\n','') for td in tds]
     #print(values)
     if len(tds) > 0:
         df = df.append(pd.Series(values, index = columns), ignore_index = True)
@@ -45,4 +45,5 @@ for i in range(2, len(rows)):
 print(val)
 df.drop('Sources', axis=1, inplace=True)
 df['State/territory'] = val
-print(df)
+df.to_csv('Quarantine.csv', index=False)
+#print(df)
