@@ -1,49 +1,42 @@
-import requests
-import urllib.request
-from bs4 import BeautifulSoup
-import pandas as pd
-from selenium import webdriver
+import csv
+import sys
+import os
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from time import sleep, time
 
-URL = 'https://en.wikipedia.org/wiki/U.S._state_and_local_government_response_to_the_2020_coronavirus_pandemic'
-response = requests.get(URL)
+HEADERS = {'user-agent': 'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.163 Safari/537.36', 'accept':'*/*'} # для заголовков, будем имитировать работу браузера
+URL = 'https://www.valuepenguin.com/average-cost-of-health-insurance'
 
-soup = BeautifulSoup(response.text, 'html.parser')
-table = soup.find('table',{'class':'wikitable sortable'}).tbody
+class Parser:
+    TABLE = ""
 
-rows = table.find_all('tr')
-columnsUp = [v.text.replace('\n', '') for v in rows[0].find_all('th')]
-columnsDown = [v.text.replace('\n', '') for v in rows[1].find_all('th')]
-columnsUp.remove('Closures ordered')
-columnsUp.remove('Sources')
-columns = columnsUp + columnsDown
-columns.remove('State/territory')
-columns.append('Sources')
-print(columnsUp)
-#print(columnsDown)
-print(columns)
-df = pd.DataFrame(columns = columns)
-val = []
+    def __init__(self, driver):
+        self.driver = driver
+        self.wait = WebDriverWait(self.driver, 20)
+    def go_to_taget_page(self, url):
+        self.driver.get(url)
+    def go_to_main_page(self):
+        self.driver.get(URL)
+class ParseInsurance(Parser):
+    OurUrl = "https://www.valuepenguin.com/average-cost-of-health-insurance"
 
-for i in range(1, len(rows)):
-    tds = rows[i].find_all('td')
-    #print(rows[i])
-    #print(len(tds))
-    #print(len(columns))
-    if len(tds) == len(columns):
-        values = [tds[0].text.replace('\n','').replace('Yes', '1').replace('No','0'), tds[1].text.replace('\n','').replace('Yes', '1').replace('No','0'), tds[2].text.replace('\n','').replace('Yes', '1').replace('No','0'), tds[3].text.replace('\n','').replace('Yes', '1').replace('No','0').replace('Mandatory quarantine','2').replace('Travel suspended','2').replace('Limited quarantine','1').replace('Recommended quarantine', '1').replace('Limited quarantine / Screened', '1').replace('Reqional','1').replace('Screened','1'), tds[4].text.replace('\n','').replace('Yes', '1').replace('No','0'), tds[5].text.replace('\n','').replace('Yes', '1').replace('No','0').replace('Restricted','1'), tds[6].text.replace('\n','').replace('Yes', '1').replace('No','0').replace('Restricted','1'), tds[7].text.replace('\n','').replace('Yes','1').replace('No','0').replace('Restricted','1'),tds[8].text.replace('\n','').replace('Yes', '1').replace('No','0').replace('Restricted','1')]
-        #print(values)
-    else:
-        values = [td.text.replace('\n','') for td in tds]
-    #print(values)
-    if len(tds) > 0:
-        df = df.append(pd.Series(values, index = columns), ignore_index = True)
-for i in range(2, len(rows)):
-    tds = rows[i].find_all('a')
-    #print(tds, " - ", i)
-    title = tds[0].get('title')
-    val.append(title)
-print(val)
-df.drop('Sources', axis=1, inplace=True)
-df['State/territory'] = val
-df.to_csv('Quarantine.csv', index=False)
-#print(df)
+    def __init__(self, driver):
+        super().__init__(driver)
+    def start_parse(self):
+        self.go_to_taget_page(self.OurUrl)
+        self.find_main_table()
+        self.collecting_information_from_table()
+    def find_main_table(self):
+        sleep(3)
+        self.TABLE = self.driver.find_element_by_class_name("Table--tbody").find_elements_by_tag_name("tr")
+    def collecting_information_from_table(self):
+        with open("Insurance_cost.csv", 'w', encoding='utf-8', newline='') as file:
+            writer = csv.DictWriter(file,
+                                    fieldnames=["State", "Monthly cost", "Annual cost", "% change vs. avg."])
+            writer.writeheader()
+            #scraping
+
+            for tr in self.TABLE:
+                info = tr.find_elements_by_tag_name("td")
