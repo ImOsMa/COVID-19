@@ -8,7 +8,6 @@ import csv
 import sys
 import os
 from selenium.webdriver.support.ui import WebDriverWait
-#Parser
 
 
 class Parser:
@@ -21,6 +20,7 @@ class Parser:
     columnsUp = ''
     DF = ''
     TDS = ''
+    THS = ''
     HEADERS = {
         'user-agent': 'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.163 Safari/537.36',
         'accept': '*/*'}  # для заголовков, будем имитировать работу браузера
@@ -86,7 +86,8 @@ class PopulationDensity(Parser):
     def filter_table(self):
         self.DF = pd.DataFrame(columns=self.columnsUp)
         for i in range(1, len(self.rows)):
-            self.TDS = self.rows[i].find_all('td')
+            TDS = rows[i].find_all('td')
+
 
             if len(self.TDS) == 10:
                 values = [self.TDS[0].text.replace('\n', '').replace('\xa0', ''),
@@ -130,7 +131,7 @@ class InsuranceCost(Parser):
 
 class StatisticsUsa(Parser):
     URL = "https://www.worldlifeexpectancy.com/usa/heart-disease"
-    FILES = ["Heart_Disease.csv","Cancer.csv", "Chronic_Lung.csv", "Diabetes.csv", "Hypertension.csv", "Overweight.csv",
+    FILES = ["Heart_Disease.csv", "Cancer.csv", "Chronic_Lung.csv", "Diabetes.csv", "Hypertension.csv", "Overweight.csv",
              "Physical_activity.csv", "Pneumonia.csv"]
     PAGES = ["https://www.worldlifeexpectancy.com/usa/cancer", "https://www.worldlifeexpectancy.com/usa/chronic-lung-disease", "https://www.worldlifeexpectancy.com/usa/diabetes",
              "https://www.worldlifeexpectancy.com/usa/hypertension-renal", "https://www.worldlifeexpectancy.com/usa/adult-overweight-obesity-rate",
@@ -138,6 +139,7 @@ class StatisticsUsa(Parser):
     s = 0
     states = ''
     cases = ''
+
     def start_parse(self):
         self.go_to_page_selenium(self.URL)
         sleep(10)
@@ -169,5 +171,42 @@ class StatisticsUsa(Parser):
 
 
 class Quarantine(Parser):
+    URL = 'https://en.wikipedia.org/wiki/U.S._state_and_local_government_response_to_the_COVID-19_pandemic'
 
+    def start_parse(self):
+        self.go_to_page_bs(self.URL)
+        self.finding_table()
+        self.filter_table()
 
+    def finding_table(self):
+        self.TABLE = self.soup.find('table', {'class': 'wikitable sortable'}).tbody
+        self.rows = self.TABLE.find_all('tr')
+        self.columns = [v.text.replace('\n', '').replace('[6]', '') for v in self.rows[0].find_all('th')]
+        self.columnsUp = [v.text.replace('\n', '').replace('[6]', '') for v in self.rows[1].find_all('th')]
+        self.columns.remove('Closures ordered')
+        self.columns.remove('Sources')
+        self.columns = self.columns + self.columsUp
+        self.columns.append('Sources')
+
+    def filter_table(self):
+        self.DF = pd.DataFrame(columns=self.columns)
+        for i in range(2, len(self.rows)):
+            self.TDS = self.rows[i].find_all('td')
+            self.THS = self.rows[i].find_all('th')
+            if len(self.TDS) + len(self.THS) == 10:
+                values = [self.THS[0].text.replace('\n', ''),
+                          self.TDS[0].text.replace('\n', '').replace('\xa0', ''),
+                          self.TDS[1].text.replace('\n', '').replace('\xa0', '').replace('[7]', ''),
+                          self.TDS[2].text.replace('\n', ''),
+                          self.TDS[3].text.replace('\n', ''),
+                          self.TDS[4].text.replace('\n', ''),
+                          self.TDS[5].text.replace('\n', ''),
+                          self.TDS[6].text.replace('\n', ''),
+                          self.TDS[7].text.replace('\n', ''),
+                          self.TDS[8].text.replace('\n', '')]
+            else:
+                values = [td.text.replace('\n', '').replace('\xa0', '').replace('[7]', '') for td in self.TDS]
+                values.append(self.THS[0].text.replace('\n', ''))
+            if values:
+                self.DF = self.DF.append(pd.Series(values, index=columns), ignore_index=True)
+                self.DF.to_csv('Lockdown.csv', index=False)
