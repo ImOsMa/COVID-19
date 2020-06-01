@@ -210,3 +210,22 @@ class Quarantine(Parser):
             if values:
                 self.DF = self.DF.append(pd.Series(values, index=columns), ignore_index=True)
                 self.DF.to_csv('Lockdown.csv', index=False)
+
+
+class OpenQuarantine(Parser):
+    URL = 'https://en.wikipedia.org/wiki/U.S._state_and_local_government_response_to_the_COVID-19_pandemic'
+
+    def start_parse(self):
+        self.go_to_page_bs(self.URL)
+        self.finding_table()
+
+    def finding_table(self):
+        self.TABLE = self.soup.find('table', {'class': 'wikitable sortable collapsible mw-collapsible mw-made-collapsible jquery-tablesorter'}).tbody
+        self.rows = self.TABLE.find_all('tr')
+        self.columns = [v.text.replace('\n', '').replace('[6]', '') for v in self.rows[0].find_all('th')]
+        print(self.columns)
+
+
+driver = webdriver.Chrome()
+tr = OpenQuarantine(driver)
+tr.start_parse()
