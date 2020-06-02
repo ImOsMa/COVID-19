@@ -218,14 +218,28 @@ class OpenQuarantine(Parser):
     def start_parse(self):
         self.go_to_page_bs(self.URL)
         self.finding_table()
+        self.filter_table()
 
     def finding_table(self):
-        self.TABLE = self.soup.find('table', {'class': 'wikitable sortable collapsible mw-collapsible mw-made-collapsible jquery-tablesorter'}).tbody
+        self.TABLE = self.soup.find('table', {'class': 'wikitable sortable collapsible'}).tbody
         self.rows = self.TABLE.find_all('tr')
         self.columns = [v.text.replace('\n', '').replace('[6]', '') for v in self.rows[0].find_all('th')]
         print(self.columns)
 
+    def filter_table(self):
+        self.DF = pd.DataFrame(columns=self.columns)
+        for i in range(2, len(self.rows)):
+            self.TDS = self.rows[i].find_all('td')
+            self.THS = self.rows[i].find_all('th')
+            if len(self.TDS) + len(self.THS) == 3:
+                values = [self.THS[0].text.replace('\n', ''),
+                          self.TDS[0].text.replace('\n', '').replace('\xa0', '').replace(',', '').replace('2020', ''),
+                          self.TDS[1].text.replace('\n', '').replace('\xa0', '').replace(',', '').replace('2020', '').replace('[101][102]', '')]
+            else:
+                values = [td.text.replace('\n', '').replace('\xa0', '').replace(',', '').replace('2020', '').replace('[101][102]', '') for td in self.TDS]
+                values.append(self.THS[0].text.replace('\n', ''))
+            if values:
+                self.DF = self.DF.append(pd.Series(values, index= self.columns), ignore_index=True)
+                self.DF.to_csv('Open.csv', index=False)
 
-driver = webdriver.Chrome()
-tr = OpenQuarantine(driver)
-tr.start_parse()
+
