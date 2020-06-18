@@ -13,14 +13,6 @@ from selenium.webdriver.support.ui import WebDriverWait
 class Parser:
 
     TABLE = ""
-    response = ''
-    soup = ''
-    rows = ''
-    columns = ''
-    columnsUp = ''
-    DF = ''
-    TDS = ''
-    THS = ''
     HEADERS = {
         'user-agent': 'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.163 Safari/537.36',
         'accept': '*/*'}  # для заголовков, будем имитировать работу браузера
@@ -28,6 +20,14 @@ class Parser:
     def __init__(self, driver):
         self.driver = driver
         self.wait = WebDriverWait(self.driver, 20)
+        self.response = ''
+        self.soup = ''
+        self.rows = ''
+        self.columns = ''
+        self.columnsUp = ''
+        self.DF = ''
+        self.TDS = ''
+        self.THS = ''
 
     def go_to_page_selenium(self, url):
         self.driver.get(url)
@@ -63,7 +63,6 @@ class MedAge(Parser):
                 values = [td.text.replace('\n', '').replace('\xa0', '').replace('[7]', '') for td in self.TDS]
             self.DF = self.DF.append(pd.Series(values, index=self.columns), ignore_index=True)
             self.DF.to_csv('median_age.csv', index=False)
-
 
 class PopulationDensity(Parser):
     URL = 'https://en.wikipedia.org/wiki/List_of_states_and_territories_of_the_United_States_by_population_density'
@@ -102,7 +101,6 @@ class PopulationDensity(Parser):
 
             self.DF.to_csv('population_density.csv', index=False)
 
-
 class InsuranceCost(Parser):
     URL = "https://www.valuepenguin.com/average-cost-of-health-insurance"
 
@@ -127,7 +125,6 @@ class InsuranceCost(Parser):
                 }
                 writer.writerow(row)
         print("That's all")
-
 
 class StatisticsUsa(Parser):
     URL = "https://www.worldlifeexpectancy.com/usa/heart-disease"
@@ -169,7 +166,6 @@ class StatisticsUsa(Parser):
             sleep(3)
             self.find_table()
 
-
 class Quarantine(Parser):
     URL = 'https://en.wikipedia.org/wiki/U.S._state_and_local_government_response_to_the_COVID-19_pandemic'
 
@@ -210,7 +206,6 @@ class Quarantine(Parser):
             if values:
                 self.DF = self.DF.append(pd.Series(values, index=columns), ignore_index=True)
                 self.DF.to_csv('Lockdown.csv', index=False)
-
 
 class OpenQuarantine(Parser):
     URL = 'https://en.wikipedia.org/wiki/U.S._state_and_local_government_response_to_the_COVID-19_pandemic'
