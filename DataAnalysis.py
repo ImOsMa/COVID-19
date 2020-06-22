@@ -1,114 +1,175 @@
 import numpy as np
 import pandas as pd
+import seaborn as sns
+import xlrd
+import os
+from IPython.display import clear_output
+from collections import OrderedDict
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
-import random
-import math
-import time
-from sklearn.linear_model import LinearRegression
-from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import PolynomialFeatures
-from sklearn.svm import SVR
-from sklearn.metrics import mean_squared_error, mean_absolute_error
-import datetime
-import operator
-from collections import OrderedDict
-import xlrd
+import plotly.express as px
+import plotly.graph_objects as go
+import warnings
 
-df = pd.read_excel('Main.xlsx')
-lockdown = pd.read_csv('Lockdowns.csv')
-#print(df)
-lockdown = lockdown.drop(['Sources'], axis = 1)
-lockdown = lockdown.drop(['Gatherings banned'], axis = 1)
-#print(lockdown)
-emergency = lockdown['State of emergency declared'].tolist()
-for i in range(len(emergency)):
-    emergency[i] = emergency[i].replace('March ', '2020-03-')
-    emergency[i] = emergency[i].replace('January ', '2020-01-')
-    emergency[i] = emergency[i].replace('February ', '2020-02-')
-lockdown['State of emergency declared'] = emergency
-stay_at_home = lockdown['Stay at home ordered'].tolist()
-for i in range(len(stay_at_home)):
-    stay_at_home[i] = stay_at_home[i].replace('March ', '2020-03-').replace('(advisory)', '').replace(' (partial advisory)', '').replace(' (declared unconstitutional on May 13)', '').replace('Regional', '2020-12-01')
-    stay_at_home[i] = stay_at_home[i].replace('January ', '2020-01-').replace('(advisory)', '').replace(' (partial advisory)', '').replace(' (declared unconstitutional on May 13)', '').replace('Regional', '2020-12-01')
-    stay_at_home[i] = stay_at_home[i].replace('April ', '2020-04-').replace('(advisory)', '').replace(' (partial advisory)', '').replace(' (declared unconstitutional on May 13)', '').replace('Regional', '2020-12-01')
-    stay_at_home[i] = stay_at_home[i].replace('No', '2020-12-01')
-lockdown['Stay at home ordered'] = stay_at_home
-print(stay_at_home)
-out = lockdown['Out-of-state travel restrictions'].tolist()
-for i in range(len(out)):
-    out[i] = out[i].replace('No', '0')
-    out[i] = out[i].replace('Mandatory quarantine', '2')
-    out[i] = out[i].replace('Travel suspended', '2')
-    out[i] = out[i].replace('Limited quarantine', '1')
-    out[i] = out[i].replace('Recommended quarantine', '1')
-    out[i] = out[i].replace(' / Screened', '')
-    out[i] = out[i].replace('Regional', '1')
-    out[i] = out[i].replace('Screened', '1')
-lockdown['Out-of-state travel restrictions'] = out
+warnings.filterwarnings('ignore')
 
-schools = lockdown['Schools'].tolist()
-daycares = lockdown['Daycares'].tolist()
-bars = lockdown['Bars & sit-down restaurants'].tolist()
-retail = lockdown['Non-essential retail'].tolist()
 
-for i in range(len(schools)):
-    schools[i] = schools[i].replace('Yes', '1').replace(' (remainder of term)','').replace('No', '0').replace('Regional', '0.5').replace('Restricted', '0.5').replace(' (districts choice)', '')
-    daycares[i] = daycares[i].replace('Yes', '1').replace(' (remainder of term)', '').replace('No', '0').replace('Regional', '0.5').replace('Restricted', '0.5').replace(' (districts choice)', '')
-    bars[i] = bars[i].replace('Yes', '1').replace(' (remainder of term)', '').replace('No', '0').replace('Regional', '0.5').replace('Restricted', '0.5').replace(' (districts choice)', '')
-    retail[i] = retail[i].replace('Yes', '1').replace(' (remainder of term)', '').replace('No', '0').replace('Regional', '0.5').replace('Restricted', '0.5').replace(' (districts choice)', '')
+class DataAnalysis:
+    df = ''
 
-lockdown['Schools'] = schools
-lockdown['Daycares'] = daycares
-lockdown['Bars & sit-down restaurants'] = bars
-lockdown['Non-essential retail'] = retail
+    def __init__(self, MainTable):
+        self.MainTableName = MainTable
+        self.read_data(self.MainTableName)
 
-print(lockdown)
+    def read_data(self, name):
+        self.df = pd.read_excel(name)
 
-df['SE'] = 0
-df['SatH'] = 0
-df['OutState'] = 0
-df['schools'] = 0
-df['daycares'] = 0
-df['restaurants'] = 0
-df['retail'] = 0
+    def visualisationPositive(self):
+        color_list = ['b', 'g', 'r', 'c', 'm', 'y', 'k']
+        plot_data = pd.read_excel('Data.xlsx', usecols=['Date','Province/State', 'positive'])
+        state_list = plot_data.iloc[:, 1].astype(str)
+        state_list = state_list.drop_duplicates(keep='first')
+        for i in range(len(state_list)):
+            plot1 = plot_data.loc[plot_data['Province/State'] == state_list[i]]
+            plot1.drop(['Province/State'], axis=1, inplace=True)
+            plot1 = plot1.loc[~plot1['positive'].isin([0])]
+            fig = plt.figure(figsize=(18, 6))
+            plt.plot(range(len(plot1.positive)), plot1.positive, '-o', color=color_list[np.random.randint(7)])
+            plt.title('Covid-19 Plot for ' + state_list[i])
+            plt.show()
+            plt.clf()
+            clear_output(wait=True)
 
-df['Date'] = pd.to_datetime(df.Date)
+    def visualisationDeaths(self):
+        color_list = ['b', 'g', 'r', 'c', 'm', 'y', 'k']
+        plot_data = pd.read_excel('Data.xlsx', usecols=['Date','Province/State', 'deaths'])
+        state_list = plot_data.iloc[:, 1].astype(str)
+        state_list = state_list.drop_duplicates(keep='first')
+        for i in range(len(state_list)):
+            plot1 = plot_data.loc[plot_data['Province/State'] == state_list[i]]
+            plot1.drop(['Province/State'], axis=1, inplace=True)
+            plot1 = plot1.loc[~plot1['deaths'].isin([0])]
+            fig = plt.figure(figsize=(18, 6))
+            plt.plot(range(len(plot1.deaths)), plot1.deaths, '-o', color=color_list[np.random.randint(7)])
+            plt.title('Covid-19 Deaths for ' + state_list[i])
+            plt.show()
+            plt.clf()
+            clear_output(wait=True)
 
-lockdown.rename(columns = {'State of emergency declared': 'SE', 'Stay at home ordered': 'SatH', 'Out-of-state travel restrictions': 'OutState'}, inplace=True)
-lockdown['SE'] = pd.to_datetime(lockdown.SE)
-lockdown['SatH'] = pd.to_datetime(lockdown.SatH)
+    def mostCases(self):
+        top = self.df[self.df['Date'] == self.df['Date'].max()]
+        top.rename(columns={'Province/State': 'state'}, inplace=True)
+        actives = top.groupby(by = 'state')['positive'].sum().sort_values(ascending=False).head(20).reset_index()
+        #print(actives)
+        plt.figure(figsize=(15, 10))
+        plt.xticks(fontsize=15)
+        plt.yticks(fontsize=15)
+        plt.xlabel('Total cases', fontsize=30)
+        plt.ylabel('State', fontsize=30)
+        plt.title('Top 20 states having most active cases', fontsize=30)
+        ax = sns.barplot(x=actives.positive, y=actives.state)
+        for i, (value, name) in enumerate(zip(actives.positive, actives.state)):
+            ax.text(value, i - 0.5, f'{value:.0f}', size=10, ha='left', va='center')
+        print(ax.set(xlabel='Total cases', ylabel='State'))
+        plt.show()
 
-print(lockdown.head)
-print(lockdown.shape)
+    def CompareCases(self):
+        state_list = self.df.iloc[:, 2].astype(str)
+        state_list = state_list.drop_duplicates(keep='first')
+        state_list = state_list.tolist()
+        states_positive = pd.DataFrame()
+        for i in range(50):
+            pred = self.df.loc[self.df['Province/State'] == state_list[i]]
+            positive = pred['positive'].tolist()
+            states_positive[state_list[i]] = positive
 
-#for i in range(56):
-#df.loc[(df['Date'] >= lockdown[''])]
-#df.loc[(df['Date'] > '2020-01-25') & (df['state'] == 'Alabama'), 'retail'] = 0
-SE = lockdown['SE'].tolist()
-state = lockdown['State/territory'].tolist()
-schools = lockdown['Schools'].tolist()
-daycares = lockdown['Daycares'].tolist()
-restaurants = lockdown['Bars & sit-down restaurants'].tolist()
-retail = lockdown['Non-essential retail'].tolist()
-print(state)
-for i in range(len(state)):
-    state[i] = state[i].replace(' ', '')
-    state[i] = state[i].replace('DistrictofColumbia', 'District of Columbia').replace('NewHampshire', 'New Hampshire').replace('NewJersey', 'New Jersey').replace('NewMexico', 'New Mexico')
-    state[i] = state[i].replace('NewMexico', 'New Mexico').replace('NewYork', 'New York').replace('NorthCarolina', 'North Carolina').replace('NorthDakota', 'North Dakota').replace('SouthCarolina', 'South Carolina')
-    state[i] = state[i].replace('SouthDakota', 'South Dakota').replace('WestVirginia','West Virginia')
-print(state)
-for i in range(len(state)):
-    df.loc[(df['state'] == state[i]) & (df['Date'] >= SE[i]), 'SE'] = 1
-    df.loc[(df['state'] == state[i]) & (df['Date'] >= SE[i]), 'schools'] = float(schools[i])
-    df.loc[(df['state'] == state[i]) & (df['Date'] >= SE[i]), 'daycares'] = float(daycares[i])
-    df.loc[(df['state'] == state[i]) & (df['Date'] >= SE[i]), 'restaurants'] = float(restaurants[i])
-    df.loc[(df['state'] == state[i]) & (df['Date'] >= SE[i]), 'retail'] = float(retail[i])
-    print(df[(df['state'] == state[i]) & (df['Date'] >= SE[i])])
-home = lockdown['SatH'].tolist()
-out = lockdown['OutState'].tolist()
+        for i in range(1, 5):
+          plt.figure(figsize=(20, 6))
+          for j in states_positive.columns[(i - 1) * 5:i * 5]:
+            data = states_positive[[j]]
+            data = data[data[j] > 0].reset_index(drop=True)
+            data = data.rolling(2).mean().fillna(0)
+            plt.plot([str(i) for i in data[j].index], data[j], marker='*', label=j)
 
-for i in range(len(state)):
-    df.loc[(df['state'] == state[i]) & (df['Date'] >= home[i]), 'OutState'] = float(out[i])
-    df.loc[(df['state'] == state[i]) & (df['Date'] >= home[i]), 'SatH'] = 1
-df.to_excel('Main2.xlsx', engine='xlsxwriter', index = False)
+        plt.title("STATE LEVEL CONFIRMED CASES GROWTH CURVE")
+        plt.legend()
+        plt.xlabel('Day')
+        plt.ylabel('Confirmed Cases')
+        plt.show()
+
+        mse_list = []
+        best_pair = {}
+
+        for i in states_positive.columns:
+            selected = []
+            data = states_positive[[i]]
+            data = states_positive[data[i] > 0].reset_index(drop=True)  # начинаем индекс, где нет нуля
+            data_list1 = data.iloc[:, 0].values  # удаляем нулевые значения
+            for j in states_positive.columns:
+                if j != i:
+                    data1 = states_positive[[j]]  # берем другой штат
+                    data1 = data1[data1[j] > 0].reset_index(drop=True)  # начинаем индекс, где нет нуля
+                    data_list2 = data1.iloc[:, 0].values  # удаляем нулевые значения
+                    if len(data_list1) < len(data_list2):
+                        corr = np.corrcoef(data_list1, data_list2[:len(data_list1)])[0, 1]
+                        # print(corr, '-corr')
+                        mse = (np.square(data_list1 - data_list2[:len(data_list1)])).mean()
+                        # print(mse, '-mse')
+                        mse_list.append(mse)
+                        if ((mse < 150000) & (corr > .7)):
+                            if len(data1[j]) > len(data[i] + 7):
+                                plt.figure(figsize=(21, 6))
+                                plt.plot([str(i) for i in data[i].index], data[i], marker='*', label=i)
+                                plt.plot([str(i) for i in data1[j].index], data1[j], marker='*', label=j)
+                                plt.title("Corrleation {},MSE {}".format(round(corr * 100, 2), mse))
+                                plt.legend()
+                                plt.xlabel('Day')
+                                plt.ylabel('Confirmed Cases')
+                                plt.show()
+                                selected.append(data_list2[:len(data_list1) + 7])
+            if len(selected) > 0:
+                best_pair[i] = selected
+
+    def Diagrams(self):
+        #Средний возраст
+        top = self.df[self.df['Date'] == self.df['Date'].max()]
+        top.rename(columns={'Province/State': 'state'}, inplace=True)
+        actives = top.groupby(by = 'state')['med_age'].sum().sort_values(ascending=False).head(20).reset_index()
+        #print(actives)
+        plt.figure(figsize=(15, 10))
+        plt.xticks(fontsize=15)
+        plt.yticks(fontsize=15)
+        plt.xlabel('Media age', fontsize=30)
+        plt.ylabel('State', fontsize=30)
+        plt.title('Top 20 ', fontsize=30)
+        ax = sns.barplot(x=actives.med_age, y=actives.state)
+        for i, (value, name) in enumerate(zip(actives.med_age, actives.state)):
+            ax.text(value, i - 0.5, f'{value:.0f}', size=10, ha='left', va='center')
+        print(ax.set(xlabel='Median Age', ylabel='State'))
+        plt.show()
+        plt.clf()
+
+        #страховка
+        top = self.df[self.df['Date'] == self.df['Date'].max()]
+        top.rename(columns={'Province/State': 'state'}, inplace=True)
+        actives = top.groupby(by = 'state')['insurance'].sum().sort_values(ascending=False).head(20).reset_index()
+        #print(actives)
+        plt.figure(figsize=(15, 10))
+        plt.xticks(fontsize=15)
+        plt.yticks(fontsize=15)
+        plt.xlabel('Insurance', fontsize=30)
+        plt.ylabel('State', fontsize=30)
+        plt.title('Top 20 ', fontsize=30)
+        ax = sns.barplot(x=actives.insurance, y=actives.state)
+        for i, (value, name) in enumerate(zip(actives.insurance, actives.state)):
+            ax.text(value, i - 0.5, f'{value:.0f}', size=10, ha='left', va='center')
+        print(ax.set(xlabel='Insurance', ylabel='State'))
+        plt.show()
+        plt.clf()
+
+t = DataAnalysis('Data.xlsx')
+#t.visualisationPositive()
+#t.visualisationDeaths()
+#t.mostCases()
+#t.CompareCases()
+#t.Diagrams()
