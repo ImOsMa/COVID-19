@@ -13,6 +13,14 @@ from selenium.webdriver.support.ui import WebDriverWait
 class Parser:
 
     TABLE = ""
+    response = ''
+    soup = ''
+    rows = ''
+    columns = ''
+    columnsUp = ''
+    DF = ''
+    TDS = ''
+    THS = ''
     HEADERS = {
         'user-agent': 'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.163 Safari/537.36',
         'accept': '*/*'}  # для заголовков, будем имитировать работу браузера
@@ -85,17 +93,15 @@ class PopulationDensity(Parser):
     def filter_table(self):
         self.DF = pd.DataFrame(columns=self.columnsUp)
         for i in range(1, len(self.rows)):
-            TDS = rows[i].find_all('td')
-
-
+            self.TDS = self.rows[i].find_all('td')
             if len(self.TDS) == 10:
-                values = [self.TDS[0].text.replace('\n', '').replace('\xa0', ''),
-                          self.TDS[1].text.replace('\n', '').replace('\xa0', '').replace('[7]', ''),
-                          self.TDS[2].text.replace('\n', ''), self.TDS[3].text.replace('\n', ''), self.TDS[4].text.replace('\n', ''),
-                          self.TDS[5].text.replace('\n', ''), self.TDS[6].text.replace('\n', ''), self.TDS[7].text.replace('\n', ''),
-                          self.TDS[8].text.replace('\n', ''), self.TDS[9].text.replace('\n', '')]
+                values = [self.TDS[0].text.replace('\n', '').replace('\xa0', '').replace('"', '').replace(',', '.').replace('”', ''),
+                          self.TDS[1].text.replace('\n', '').replace('\xa0', '').replace('[7]', '').replace('"', '').replace(',', '.').replace('”', ''),
+                          self.TDS[2].text.replace('\n', '').replace('"', '').replace(',', '.').replace('”', ''), self.TDS[3].text.replace('\n', '').replace('"', '').replace(',', '.').replace('”', ''), self.TDS[4].text.replace('\n', '').replace('"', '').replace(',', '.').replace('”', ''),
+                          self.TDS[5].text.replace('\n', '').replace('"', '').replace(',', '.').replace('”', ''), self.TDS[6].text.replace('\n', '').replace('"', '').replace(',', '.').replace('”', ''), self.TDS[7].text.replace('\n', '').replace('"', '').replace(',', '.').replace('”', ''),
+                          self.TDS[8].text.replace('\n', '').replace('"', '').replace(',', '.').replace('”', ''), self.TDS[9].text.replace('\n', '').replace('"', '').replace(',', '.').replace('”', '')]
             else:
-                values = [td.text.replace('\n', '').replace('\xa0', '').replace('[7]', '') for td in self.TDS]
+                values = [td.text.replace('\n', '').replace('\xa0', '').replace('[7]', '').replace('"', '').replace(',', '.') for td in self.TDS]
             if values:
                 self.DF = self.DF.append(pd.Series(values, index=self.columnsUp), ignore_index=True)
 
@@ -237,4 +243,5 @@ class OpenQuarantine(Parser):
                 self.DF = self.DF.append(pd.Series(values, index= self.columns), ignore_index=True)
                 self.DF.to_csv('Open.csv', index=False)
 
-
+t = PopulationDensity(webdriver.Chrome())
+t.start_parse()
