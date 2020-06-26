@@ -243,5 +243,5 @@ class OpenQuarantine(Parser):
                 self.DF = self.DF.append(pd.Series(values, index= self.columns), ignore_index=True)
                 self.DF.to_csv('Open.csv', index=False)
 
-t = PopulationDensity(webdriver.Chrome())
+t = StatisticsUsa(webdriver.Chrome())
 t.start_parse()

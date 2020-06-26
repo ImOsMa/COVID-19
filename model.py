@@ -85,10 +85,10 @@ def read_data():
     df = pd.read_excel('Input.xlsx')
     return  df
 
-def do_start(bot: Bot, update:Update):
+def chat_help(bot: Bot, update:Update):
     bot.send_message(
         chat_id=update.message.chat_id,
-        text = "Hello!!"
+        text = "Hello, please enter /corona to start prediction"
     )
 
 def corona_stats_states(bot: Bot, update:Update):
@@ -424,7 +424,7 @@ def main():
         bot=bot,
     )
 
-    start_handler = CommandHandler("start", do_start)
+    start_handler = CommandHandler("start", chat_help)
     corona_handler = CommandHandler('corona', corona_stats_dynamics)
     message_handler = MessageHandler(Filters.text, corona_stats_states)
 
